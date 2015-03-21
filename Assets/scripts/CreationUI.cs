@@ -12,30 +12,21 @@ public class CreationUI : MonoBehaviour {
 	creationMode currentMode = creationMode.DRAW;
 	public Text actorName, modeButton;
 	string currentActorName = "";
-	WW.WWGame game;
+	WW.Game game;
 	public DrawToFBO drawingSystem;
 	public GameObject drawingPanel;
 	public RawImage drawingImage, onionSkin;
 	public ActorDisplay actor;
 	void Start(){
-		// load from save
-		Debug.Log (Application.persistentDataPath + "/Test.xml");
-		if (System.IO.File.Exists (Application.persistentDataPath + "/Test.xml")) {
-			Debug.Log ("found test");
-			game = WW.WWGame.Load ("Test.xml");
-		} else {
-			game = new WW.WWGame ();
-			Debug.Log ("xfound test");
-		}
-		if (game.currentObject == null) {
-			game.GetNewObject ();
-			game.currentObject.SetupNewArt ();
-			Debug.Log ("creating new art");
-		}
+		game = GameData.instance.gameData;
 		actor.actor = game.currentObject;
+		Debug.Log (game.currentObject.art[0].Frames.Count);
 		drawingImage.texture = game.currentObject.GetCurrentArt ().currentFrame.displayTex;
 		onionSkin.enabled = false;
 		drawingPanel.GetComponent<DrawingArea> ().drawingImage = drawingImage;
+	}
+	void OnApplicationQuit(){
+		Save ();
 	}
 	void SaveCurrentActor(){
 		// store the art in the fbo into the current filename
@@ -90,7 +81,9 @@ public class CreationUI : MonoBehaviour {
 		game.currentObject.GetCurrentArt ().DeleteCurrentFrame ();
 	}
 	public void Save(){
-		game.Save ();
+		if (game != null) {
+			game.Save (Application.persistentDataPath + "/Test.xml");
+		}
 	}
 	void UpdateDrawingTextures(){
 		drawingImage.texture = game.currentObject.GetCurrentArt ().currentFrame.displayTex;

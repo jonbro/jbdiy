@@ -64,10 +64,10 @@ public class Util
 namespace WW
 {
 	[XmlRoot ("WWGame")]
-	public class WWGame
+	public class Game
 	{
 		// some temp variables for maintaining state in the ui
-		public static WWGame currentGame;
+		public static Game currentGame;
 		public static WW_Action currentAction;
 
 		public static void LoadPlaceholder ()
@@ -79,7 +79,7 @@ namespace WW
 			if (currentGame == null)
 				LoadPlaceholder ();
 			List<string> itemList = new List<string> ();
-			foreach (Object f in currentGame.Objects) {
+			foreach (Actor f in currentGame.Objects) {
 				itemList.Add (f.Name);
 			}
 			return itemList.ToArray ();
@@ -88,14 +88,17 @@ namespace WW
 		[XmlAttribute ("name")]
 		public string Name;
 		[XmlArray ("Objects")]
-		[XmlArrayItem ("WWObject")]
-		public List<Object> Objects = new List<Object> ();
-		public Object currentObject;
+		[XmlArrayItem ("Actor")]
+		public List<Actor> Objects = new List<Actor> ();
+
+		[XmlIgnore]
+		public Actor currentObject;
 		public string filename = "Test.xml";
 
 		public void Save (string path)
 		{
-			var serializer = new XmlSerializer (typeof(WWGame));
+			filename = path;
+			var serializer = new XmlSerializer (typeof(Game));
 			using (var stream = new FileStream (path, FileMode.Create)) {
 				serializer.Serialize (stream, this);
 			}
@@ -103,36 +106,38 @@ namespace WW
 
 		public void Save ()
 		{
-			Save (Application.persistentDataPath + "/" +filename);
+			Save (filename);
 		}
 
-		public static WWGame Load (string path)
+		public static Game Load (string path)
 		{
-			var serializer = new XmlSerializer (typeof(WWGame));
+			var serializer = new XmlSerializer (typeof(Game));
 			using (var stream = new FileStream (path, FileMode.Open)) {
-				WWGame rGame = serializer.Deserialize (stream) as WWGame;
+				Game rGame = serializer.Deserialize (stream) as Game;
 				rGame.filename = path;
+				if(rGame.Objects.Count > 0)
+					rGame.currentObject = rGame.Objects [0];
 				return rGame;
 			}
 		}
 
-		public Object GetNewObject ()
+		public Actor GetNewObject ()
 		{
-			Object newObject = new Object ();
+			Actor newObject = new Actor ();
 			currentObject = newObject;
 			Objects.Add (currentObject);
 			currentObject.Name = "Actor " + Objects.Count;
 			return currentObject;
 		}
 		//Loads the xml directly from the given string. Useful in combination with www.text.
-		public static WWGame LoadFromText (string text)
+		public static Game LoadFromText (string text)
 		{
-			var serializer = new XmlSerializer (typeof(WWGame));
-			return serializer.Deserialize (new StringReader (text)) as WWGame;
+			var serializer = new XmlSerializer (typeof(Game));
+			return serializer.Deserialize (new StringReader (text)) as Game;
 		}
 	}
 
-	public class Object
+	public class Actor
 	{
 		[XmlAttribute ("currentArt")]
 		public int currentArt = 0;
@@ -190,18 +195,23 @@ namespace WW
 
 	public class Art
 	{
+
 		[XmlArray ("Frames")]
 		[XmlArrayItem ("Frame")]
 		public List<Frame> Frames = new List<Frame> ();
+
 		public string name;
+		[XmlIgnore]
 		public int currentFrameCounter = 0;
 		public Art(){
+			Debug.Log (Frames.Count);
 
 		}
+		[XmlIgnore]
 		public Frame currentFrame {
 			get{ return Frames [currentFrameCounter]; }
 		}
-
+		[XmlIgnore]
 		public Frame prevFrame {
 			get {
 				int prevFrame = currentFrameCounter - 1;
@@ -264,7 +274,6 @@ namespace WW
 		}
 		public Frame ()
 		{
-			Debug.Log ("creating new png");
 			displayTex = new Texture2D (64, 64, TextureFormat.ARGB32, false);
 			Color32 fillColor = new Color32 (0xff, 0xff, 0xff, 0x0);
 			Color32[] pixels = displayTex.GetPixels32 ();

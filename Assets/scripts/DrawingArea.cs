@@ -7,6 +7,8 @@ public class DrawingArea : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	public GameObject brush;
 	public RawImage drawingImage;
 	int lastX, lastY;
+	int brushSize = 6;
+	Color color = Color.black;
 	void Start()
 	{
 		lastX = -1;
@@ -54,17 +56,21 @@ public class DrawingArea : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 			Texture2D tex = (Texture2D)drawingImage.texture;
 			localPoint = new Vector2 (localPoint.x / r.rect.width * tex.width, localPoint.y / r.rect.height * tex.height);
 			if (lastX > 0) {
-				Line ((int)localPoint.x, (int)localPoint.y, lastX, lastY, AddPoint);
+				Line ((int)localPoint.x, (int)localPoint.y, lastX, lastY, (int x, int y)=>{AddPoint(x, y, brushSize); return true;});
 			} else {
-				AddPoint ((int)localPoint.x, (int)localPoint.y);
+				AddPoint ((int)localPoint.x, (int)localPoint.y, brushSize);
 			}
 			lastX = (int)localPoint.x;
 			lastY = (int)localPoint.y;
 		}
 	}
-	public bool AddPoint(int x, int y){
+	public bool AddPoint(int x, int y, int size = 1){
 		Texture2D tex = (Texture2D)drawingImage.texture;
-		tex.SetPixel (x, y, Color.blue);
+		for(int xw=0;xw<size;xw++){
+			for(int yw=0;yw<size;yw++){
+				tex.SetPixel (x+xw-xw/2, y+yw-yw/2, color);
+			}
+		}
 		tex.Apply ();	
 		return true;
 	}
@@ -76,7 +82,12 @@ public class DrawingArea : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 	}
 	public void OnPointerUp(PointerEventData eventData)
 	{
-//		brush.SetActive (false);
 		lastX = -1;
+	}
+	public void SetBrush(int size){
+		brushSize = size;
+	}
+	public void SetColor(Color c){
+		color = c;
 	}
 }
