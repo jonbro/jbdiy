@@ -68,7 +68,7 @@ namespace WW
 	{
 		// some temp variables for maintaining state in the ui
 		public static Game currentGame;
-		public static WW_Action currentAction;
+		public static Script currentAction;
 
 		public static void LoadPlaceholder ()
 		{
@@ -79,7 +79,7 @@ namespace WW
 			if (currentGame == null)
 				LoadPlaceholder ();
 			List<string> itemList = new List<string> ();
-			foreach (Actor f in currentGame.Objects) {
+			foreach (Actor f in currentGame.Actors) {
 				itemList.Add (f.Name);
 			}
 			return itemList.ToArray ();
@@ -87,9 +87,9 @@ namespace WW
 
 		[XmlAttribute ("name")]
 		public string Name;
-		[XmlArray ("Objects")]
+		[XmlArray ("Actors")]
 		[XmlArrayItem ("Actor")]
-		public List<Actor> Objects = new List<Actor> ();
+		public List<Actor> Actors = new List<Actor> ();
 
 		[XmlIgnore]
 		public Actor currentObject;
@@ -115,8 +115,8 @@ namespace WW
 			using (var stream = new FileStream (path, FileMode.Open)) {
 				Game rGame = serializer.Deserialize (stream) as Game;
 				rGame.filename = path;
-				if(rGame.Objects.Count > 0)
-					rGame.currentObject = rGame.Objects [0];
+				if(rGame.Actors.Count > 0)
+					rGame.currentObject = rGame.Actors [0];
 				return rGame;
 			}
 		}
@@ -125,8 +125,8 @@ namespace WW
 		{
 			Actor newObject = new Actor ();
 			currentObject = newObject;
-			Objects.Add (currentObject);
-			currentObject.Name = "Actor " + Objects.Count;
+			Actors.Add (currentObject);
+			currentObject.Name = "Actor " + Actors.Count;
 			return currentObject;
 		}
 		//Loads the xml directly from the given string. Useful in combination with www.text.
@@ -150,9 +150,9 @@ namespace WW
 		public float stagePos_x;
 		[XmlAttribute ("stagePos_y")]
 		public float stagePos_y;
-		[XmlArray ("Actions")]
-		[XmlArrayItem ("WW_Action")]
-		public List<WW_Action> Actions = new List<WW_Action> ();
+		[XmlArray ("Scripts")]
+		[XmlArrayItem ("Script")]
+		public List<Script> Scripts = new List<Script> ();
 		GameObject displayObject;
 
 		public Art SetupNewArt ()
@@ -317,23 +317,68 @@ namespace WW
 		}
 	}
 
-	public class WW_Action
+	public class Script
 	{
 		[XmlAttribute ("name")]
-		public string Name;
+		public string name;
 		[XmlArray ("Triggers")]
-		[XmlArrayItem ("WW_Trigger")]
-		public List<WW_Trigger> Triggers = new List<WW_Trigger> ();
-		[XmlArray ("Behaivors")]
-		[XmlArrayItem ("WW_Behaivor")]
-		public List<WW_Behaivor> Behaivors = new List<WW_Behaivor> ();
+		[XmlArrayItem ("Trigger")]
+		public List<Trigger> Triggers = new List<Trigger> ();
+		[XmlArray ("Actions")]
+		[XmlArrayItem ("Action")]
+		public List<Action> Actions = new List<Action> ();
+		public static ParameterSet GetParameterSetForAction(ScriptType type){
+			switch (type) {
+			case ScriptType.A_MOVEDIRECTION:
+				return new ParameterSet{ direction = true };
+				break;
+			case ScriptType.A_JUMPTOAREA:
+				return new ParameterSet{ area = true };
+			case ScriptType.A_BOUNCEINAREA:
+				return new ParameterSet{ area = true };
+			case ScriptType.T_TIME_EXACTLY:
+				return new ParameterSet{ time = true };
+				break;
+			case ScriptType.T_TIME_BETWEEN:
+				return new ParameterSet{ timeRange = true };
+				break;
+
+			}
+			return new ParameterSet ();
+		}
 	}
 
-	public class WW_Trigger
+	public enum ScriptType
 	{
+		T_TIME_EXACTLY,
+		T_TIME_BETWEEN,
+		T_TOUCH_ANYWHERE,
+
+		A_MOVEDIRECTION,
+		A_JUMPTOAREA,
+		A_BOUNCEINAREA,
 	}
 
-	public class WW_Behaivor
+	public class Trigger
 	{
+		[XmlAttribute("type")]
+		public ScriptType tType;
+		public int time;
+		public int timeHigh;
+	}
+
+	public class Action
+	{
+		[XmlAttribute("type")]
+		public ScriptType aType;
+		public Vector2 direction;
+		public Rect area;
+	}
+	public class ParameterSet{
+		public bool direction;
+		public bool area;
+		public bool actor;
+		public bool time;
+		public bool timeRange;
 	}
 }

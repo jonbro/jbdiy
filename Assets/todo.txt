@@ -1,2 +1,2 @@
-- store the images from the paint program into an actor class
+x store the images from the paint program into an actor class
 - move the gamedatastructure into seperate classes
